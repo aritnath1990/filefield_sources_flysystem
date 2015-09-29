@@ -33,7 +33,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *   id = "flysystem",
  *   name = @Translation("File attach from remote filesystems using Flysystem API"),
  *   label = @Translation("File attach Using Flysystem"),
- *   description = @Translation("Select a file from a directory on the Dropbox."),
+ *   description = @Translation("Select a file from a directory on the Flysystem storage."),
  *   weight = 7
  * )
  */
@@ -316,7 +316,7 @@ class Flysystem extends FlysystemFactory implements FilefieldSourceInterface, Co
       '#default_value' => $settings['flysystem']['path'],
       '#size' => 60,
       '#maxlength' => 128,
-      '#description' => t('The directory within the <em>Dropbox Directory</em> that will contain attachable files.'),
+      '#description' => t('The directory within the <em>Storage system Directory</em> that will contain attachable files.'),
     );
     if (\Drupal::moduleHandler()->moduleExists('token')) {
       $return['flysystem']['tokens'] = array(
