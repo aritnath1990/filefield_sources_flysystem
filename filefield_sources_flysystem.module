@@ -1,0 +1,10 @@
+<?php
+/**
+ * @file
+ * Extend FileField to allow files from flysystem sources.
+ */
+
+const FILEFIELD_SOURCE_FLYSYSTEM_ATTACH_DEFAULT_PATH = 'file_attach';
+const FILEFIELD_SOURCE_FLYSYSTEM_ATTACH_MODE_MOVE = 'move';
+const FILEFIELD_SOURCE_FLYSYSTEM_ATTACH_MODE_COPY = 'copy';
+const FILEFIELD_SOURCE_FLYSYSTEM_SCHEME = 'dropbox';

@@ -1,0 +1,13 @@
+filefield_sources.setting.source_flysystem:
+  type: mapping
+  label: 'Flysystem settings'
+  mapping:
+    path:
+      type: string
+      label: 'Flysystem Schemes'
+    absolute:
+      type: string
+      label: 'Storage Path'
+    attach_mode:
+      type: string
+      label: 'Attach method'
