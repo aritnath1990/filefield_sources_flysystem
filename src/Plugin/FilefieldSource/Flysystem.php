@@ -81,15 +81,31 @@ class Flysystem extends FlysystemFactory implements FilefieldSourceInterface, Co
       if (isset($validators['file_validate_size'])) {
         unset($validators['file_validate_size']);
       }
-      // Save the file to the new location.
-      if ($file = filefield_sources_save_file($filepath, $validators, $directory)) {
-        if (!in_array($file->id(), $input['fids'])) {
-          $input['fids'][] = $file->id();
-        }
+
+      if($element['#filefield_sources_settings']['flysystem']['servefromattach']==1){
+        $directory = $filepath;
+        if ($file = filefield_sources_save_file_servefromattach($filepath, $validators, $directory)) {
+          if (!in_array($file->id(), $input['fids'])) {
+            $input['fids'][] = $file->id();
+          }
 
         // Delete the original file if "moving" the file instead of copying.
-        if ($element['#filefield_sources_settings']['flysystem']['attach_mode'] !== FILEFIELD_SOURCE_FLYSYSTEM_ATTACH_MODE_COPY) {
-          @unlink($filepath);
+          if ($element['#filefield_sources_settings']['flysystem']['attach_mode'] !== FILEFIELD_SOURCE_FLYSYSTEM_ATTACH_MODE_COPY) {
+            @unlink($filepath);
+          }
+        }
+      }
+      else{
+
+        if ($file = filefield_sources_save_file($filepath, $validators, $directory)) {
+          if (!in_array($file->id(), $input['fids'])) {
+            $input['fids'][] = $file->id();
+          }
+
+          // Delete the original file if "moving" the file instead of copying.
+          if ($element['#filefield_sources_settings']['flysystem']['attach_mode'] !== FILEFIELD_SOURCE_FLYSYSTEM_ATTACH_MODE_COPY) {
+            @unlink($filepath);
+          }
         }
       }
 
@@ -282,7 +298,6 @@ class Flysystem extends FlysystemFactory implements FilefieldSourceInterface, Co
    * Implements hook_filefield_source_settings().
    */
   public static function settings(WidgetInterface $plugin) {
-
     $scheme_settings = Settings::get('flysystem', []);
     $flysystem_array = [];
     foreach ($scheme_settings as $key => $value) {
@@ -293,6 +308,7 @@ class Flysystem extends FlysystemFactory implements FilefieldSourceInterface, Co
         'path' => FILEFIELD_SOURCE_FLYSYSTEM_ATTACH_DEFAULT_PATH,
         'attach_mode' => FILEFIELD_SOURCE_FLYSYSTEM_ATTACH_MODE_MOVE,
         'select_scheme' => FILEFIELD_SOURCE_FLYSYSTEM_SCHEME,
+        'servefromattach' => FILEFIELD_SOURCE_FLYSYSTEM_SERVEFROMATTACH,
       ),
     ));
 
@@ -308,6 +324,21 @@ class Flysystem extends FlysystemFactory implements FilefieldSourceInterface, Co
       '#title' => t('Flysystem Schemes'),
       '#options' => $flysystem_array,
       '#default_value' => isset($settings['flysystem']['select_scheme']) ? $settings['flysystem']['select_scheme'] : '',
+  /*    '#ajax' => array(
+          'callback'=> array(get_called_class(),'checkservefromattach'),
+          'effect' => 'fade',
+          'wrapper' => 'servefromattachreplace',
+        ),
+   */
+    );
+    $return['flysystem']['servefromattach'] = array(
+      '#type' => 'checkbox',
+     '#title' => 'Serve directly from attach folder where possible',
+      //'#disabled' =>isset($settings['flysystem']['servefromattach']) ? (!$settings['flysystem']['servefromattach']) : FALSE,
+      '#default_value' => isset($settings['flysystem']['servefromattach']) ? $settings['flysystem']['servefromattach'] : FALSE,
+   /*   '#prefix' => '<div id="servefromattachreplace">',
+      '#suffix' => '</div>',
+   */
     );
 
     $return['flysystem']['path'] = array(
@@ -316,7 +347,7 @@ class Flysystem extends FlysystemFactory implements FilefieldSourceInterface, Co
       '#default_value' => $settings['flysystem']['path'],
       '#size' => 60,
       '#maxlength' => 128,
-      '#description' => t('The directory within the <em>Storage system Directory</em> that will contain attachable files.'),
+      '#description' => t('The directory within the <em>Dropbox Directory</em> that will contain attachable files.'),
     );
     if (\Drupal::moduleHandler()->moduleExists('token')) {
       $return['flysystem']['tokens'] = array(
