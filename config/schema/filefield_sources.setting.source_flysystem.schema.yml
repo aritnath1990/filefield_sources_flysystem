@@ -11,3 +11,7 @@ filefield_sources.setting.source_flysystem:
     attach_mode:
       type: string
       label: 'Attach method'
+    servefromattach:
+      type: string
+      label: ''
+
