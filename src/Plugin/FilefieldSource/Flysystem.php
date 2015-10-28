@@ -31,9 +31,9 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *
  * @FilefieldSource(
  *   id = "flysystem",
- *   name = @Translation("File attach from remote filesystems using Flysystem API"),
+ *   name = @Translation("File attach by Flysystem"),
  *   label = @Translation("File attach Using Flysystem"),
- *   description = @Translation("Select a file from a directory on the Flysystem storage."),
+ *   description = @Translation("Select a file from a directory on the Dropbox."),
  *   weight = 7
  * )
  */
@@ -81,22 +81,16 @@ class Flysystem extends FlysystemFactory implements FilefieldSourceInterface, Co
       if (isset($validators['file_validate_size'])) {
         unset($validators['file_validate_size']);
       }
-
-      if($element['#filefield_sources_settings']['flysystem']['servefromattach']==1){
+      // Serve files from source folder directly.
+      if ($element['#filefield_sources_settings']['flysystem']['attach_mode'] == FILEFIELD_SOURCE_FLYSYSTEM_ATTACH_MODE_SERVEFROMFOLDER) {
         $directory = $filepath;
         if ($file = filefield_sources_save_file_servefromattach($filepath, $validators, $directory)) {
           if (!in_array($file->id(), $input['fids'])) {
             $input['fids'][] = $file->id();
           }
-
-        // Delete the original file if "moving" the file instead of copying.
-          if ($element['#filefield_sources_settings']['flysystem']['attach_mode'] !== FILEFIELD_SOURCE_FLYSYSTEM_ATTACH_MODE_COPY) {
-            @unlink($filepath);
-          }
         }
       }
-      else{
-
+      else {
         if ($file = filefield_sources_save_file($filepath, $validators, $directory)) {
           if (!in_array($file->id(), $input['fids'])) {
             $input['fids'][] = $file->id();
@@ -308,46 +302,29 @@ class Flysystem extends FlysystemFactory implements FilefieldSourceInterface, Co
         'path' => FILEFIELD_SOURCE_FLYSYSTEM_ATTACH_DEFAULT_PATH,
         'attach_mode' => FILEFIELD_SOURCE_FLYSYSTEM_ATTACH_MODE_MOVE,
         'select_scheme' => FILEFIELD_SOURCE_FLYSYSTEM_SCHEME,
-        'servefromattach' => FILEFIELD_SOURCE_FLYSYSTEM_SERVEFROMATTACH,
       ),
     ));
 
     $return['flysystem'] = array(
       '#title' => t('Flysystem settings'),
       '#type' => 'details',
-      '#description' => t('Upload files from local or remote filesystem using flysystem API .'),
+      '#description' => t('Select files from a filesystem by Flysystem.'),
       '#weight' => 3,
     );
 
     $return['flysystem']['select_scheme'] = array(
       '#type' => 'radios',
-      '#title' => t('Flysystem Schemes'),
+      '#title' => t('Flysystem filesystems'),
       '#options' => $flysystem_array,
       '#default_value' => isset($settings['flysystem']['select_scheme']) ? $settings['flysystem']['select_scheme'] : '',
-  /*    '#ajax' => array(
-          'callback'=> array(get_called_class(),'checkservefromattach'),
-          'effect' => 'fade',
-          'wrapper' => 'servefromattachreplace',
-        ),
-   */
     );
-    $return['flysystem']['servefromattach'] = array(
-      '#type' => 'checkbox',
-     '#title' => 'Serve directly from attach folder where possible',
-      //'#disabled' =>isset($settings['flysystem']['servefromattach']) ? (!$settings['flysystem']['servefromattach']) : FALSE,
-      '#default_value' => isset($settings['flysystem']['servefromattach']) ? $settings['flysystem']['servefromattach'] : FALSE,
-   /*   '#prefix' => '<div id="servefromattachreplace">',
-      '#suffix' => '</div>',
-   */
-    );
-
     $return['flysystem']['path'] = array(
       '#type' => 'textfield',
-      '#title' => t('Storage Path'),
+      '#title' => t('Filesystem path'),
       '#default_value' => $settings['flysystem']['path'],
       '#size' => 60,
       '#maxlength' => 128,
-      '#description' => t('The directory within the <em>Dropbox Directory</em> that will contain attachable files.'),
+      '#description' => t('The directory within the Flysystem filesystem that will contain attachable files.'),
     );
     if (\Drupal::moduleHandler()->moduleExists('token')) {
       $return['flysystem']['tokens'] = array(
@@ -357,56 +334,36 @@ class Flysystem extends FlysystemFactory implements FilefieldSourceInterface, Co
     }
     $return['flysystem']['attach_mode'] = array(
       '#type' => 'radios',
-      '#title' => t('Attach method'),
+      '#title' => t('File Options'),
       '#options' => array(
-        FILEFIELD_SOURCE_FLYSYSTEM_ATTACH_MODE_MOVE => t('Move the file directly to the final location'),
-        FILEFIELD_SOURCE_FLYSYSTEM_ATTACH_MODE_COPY => t('Leave a copy of the file in the attach directory'),
+        FILEFIELD_SOURCE_FLYSYSTEM_ATTACH_MODE_MOVE => t('Move the file to the storage destination'),
+        FILEFIELD_SOURCE_FLYSYSTEM_ATTACH_MODE_COPY => t('Copy the file to the storage destination'),
+        FILEFIELD_SOURCE_FLYSYSTEM_ATTACH_MODE_SERVEFROMFOLDER => t('Serve the file from its current location (only possible when this Flysystem filesystem is also the file storage destination for this file field).'),
       ),
       '#default_value' => isset($settings['flysystem']['attach_mode']) ? $settings['flysystem']['attach_mode'] : 'move',
     );
-
     return $return;
   }
 
   /**
-   * Validate file path.
+   * Ajax callback for managed_file upload forms.
    *
-   * @param array $element
-   *   Form element.
+   * This ajax callback takes care of the following things:
+   *   - Ensures that broken requests due to too big files are caught.
+   *   - Adds a class to the response to be able to highlight in the UI, that a
+   *     new file got uploaded.
+   *
+   * @param array $form
+   *   The build form.
    * @param \Drupal\Core\Form\FormStateInterface $form_state
-   *   Form state.
-   * @param array $complete_form
-   *   Complete form.
-   */
-  public static function filePathValidate(array &$element, FormStateInterface $form_state, array &$complete_form) {
-    $parents = $element['#parents'];
-    array_pop($parents);
-    $input_exists = FALSE;
-
-    // Get input of the whole parent element.
-    $input = NestedArray::getValue($form_state->getValues(), $parents, $input_exists);
-    if ($input_exists) {
-      // Only validate if this source is enabled.
-      if (!$input['sources']['attach']) {
-        return;
-      }
-
-      // Strip slashes from the end of the file path.
-      $filepath = rtrim($element['path']['#value'], '\\/');
-      $form_state->setValueForElement($element['path'], $filepath);
-      $filepath = static::getDirectory($input['source_attach']);
-
-      // Check that the directory exists and is writable.
-      if (!file_prepare_directory($filepath, FILE_CREATE_DIRECTORY)) {
-        $form_state->setError($element['path'], t('Specified file attach path must exist or be writable.'));
-      }
-    }
-  }
-
-  /**
+   *   The form state.
+   * @param \Symfony\Component\HttpFoundation\Request $request
+   *   The current request.
    *
+   * @return \Drupal\Core\Ajax\AjaxResponse
+   *   The ajax response of the ajax upload.
    */
-  public static function uploadAjaxCallbackflysystem(&$form, FormStateInterface &$form_state, Request $request) {
+  public static function uploadAjaxCallbackflysystem(array &$form, FormStateInterface &$form_state, Request $request) {
     /** @var \Drupal\Core\Render\RendererInterface $renderer */
     $renderer = \Drupal::service('renderer');
 

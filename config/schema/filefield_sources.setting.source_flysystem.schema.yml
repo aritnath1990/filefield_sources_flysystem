@@ -4,14 +4,10 @@ filefield_sources.setting.source_flysystem:
   mapping:
     path:
       type: string
-      label: 'Flysystem Schemes'
+      label: 'Flysystem filesystems'
     absolute:
       type: string
-      label: 'Storage Path'
+      label: 'Filesystem path'
     attach_mode:
       type: string
-      label: 'Attach method'
-    servefromattach:
-      type: string
-      label: ''
-
+      label: 'File options'

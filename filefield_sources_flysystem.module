@@ -7,7 +7,8 @@
 const FILEFIELD_SOURCE_FLYSYSTEM_ATTACH_DEFAULT_PATH = 'file_attach';
 const FILEFIELD_SOURCE_FLYSYSTEM_ATTACH_MODE_MOVE = 'move';
 const FILEFIELD_SOURCE_FLYSYSTEM_ATTACH_MODE_COPY = 'copy';
-const FILEFIELD_SOURCE_FLYSYSTEM_SCHEME = 'dropbox';
+const FILEFIELD_SOURCE_FLYSYSTEM_ATTACH_MODE_SERVEFROMFOLDER = 'servefromattach';
+const FILEFIELD_SOURCE_FLYSYSTEM_SCHEME = '';
 
 
 /**
@@ -18,8 +19,6 @@ const FILEFIELD_SOURCE_FLYSYSTEM_SCHEME = 'dropbox';
  *
  * @see file_save_upload()
  */
-
-
 function filefield_sources_save_file_servefromattach($filepath, $validators = array(), $destination = FALSE, $replace = FILE_EXISTS_RENAME) {
   $user = \Drupal::currentUser();
 
