@@ -367,6 +367,10 @@ class Flysystem extends FlysystemFactory implements FilefieldSourceInterface, Co
     /** @var \Drupal\Core\Render\RendererInterface $renderer */
     $renderer = \Drupal::service('renderer');
 
+
+    var_dump("We are here");
+    die("Here");
+
     $form_parents = explode('/', $request->query->get('element_parents'));
 
     // Retrieve the element to be rendered.
