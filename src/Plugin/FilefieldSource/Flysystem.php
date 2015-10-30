@@ -365,11 +365,11 @@ class Flysystem extends FlysystemFactory implements FilefieldSourceInterface, Co
    */
   public static function uploadAjaxCallbackflysystem(array &$form, FormStateInterface &$form_state, Request $request) {
     /** @var \Drupal\Core\Render\RendererInterface $renderer */
-    $renderer = \Drupal::service('renderer');
-
 
     var_dump("We are here");
     die("Here");
+
+    $renderer = \Drupal::service('renderer');
 
     $form_parents = explode('/', $request->query->get('element_parents'));
 
