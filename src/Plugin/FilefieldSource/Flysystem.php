@@ -73,7 +73,7 @@ class Flysystem extends FlysystemFactory implements FilefieldSourceInterface, Co
       }
       // Clean up the file name extensions and transliterate.
       $original_filepath = $filepath;
-      $new_filepath = filefield_sources_clean_filename($filepath, $instance->getSetting['file_extensions']);
+      $new_filepath = filefield_sources_clean_filename($filepath, $instance->getSetting('file_extensions'));
       rename($filepath, $new_filepath);
       $filepath = $new_filepath;
       // Run all the normal validations, minus file size restrictions.
@@ -214,7 +214,7 @@ class Flysystem extends FlysystemFactory implements FilefieldSourceInterface, Co
     $options = form_select_options($element['filename']);
     $option_output = '';
     foreach ($options as $value) {
-      $option_output .= '<option value=' . $value["value"] . '>' . $value["label"] . '</option>';
+      $option_output .= '<option value="' . $value["value"] . '">' . $value["label"] . '</option>';
     }
     if (isset($element['attach_message'])) {
       $output = $element['attach_message']['#markup'];
